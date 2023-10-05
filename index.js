@@ -14,7 +14,7 @@ app.use(logger);
 const taskPool = new Map();
 
 app.post("/sendReminders", async (req, res) => {
-    const { id,receivingEmail, title, description, remindersAt } = req.body;
+    try{const { id,receivingEmail, title, description, remindersAt } = req.body;
     if (!id||!receivingEmail || !title || !description || !remindersAt) {
         return res.status(400).send({ message: "设定定时邮件失败,请求缺少必要参数!", status: 400 })
     }
@@ -45,7 +45,7 @@ app.post("/sendReminders", async (req, res) => {
             html: description //邮件具体内容,支持纯文本、html格式
         };
 
-        const task = cron.schedule(`${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth() + 1} *`, () => {
+        const task = cron.schedule(`${date.getSeconds()} ${date.getMinutes()} ${date.getHours()} ${date.getDate()} ${date.getMonth() + 1} *`, () => {
             // 发送邮件
             transporter.sendMail(emailFrom);
         });
@@ -58,11 +58,13 @@ app.post("/sendReminders", async (req, res) => {
         return res.status(200).send({ message: "设定定时邮件成功", status: 200 })
     } else {
         return res.status(400).send({ message: "设定定时邮件失败,定时时间小于当前时间", status: 400 })
+    }}catch(err){
+        return res.status(404).send({ message: `设定定时邮件失败,意外错误:${err}`, status: 500 })
     }
 });
 
-app.post("/destroyReminders", async (req, res) => {
-    const { id} = req.body;
+app.delete("/destroyReminders", async (req, res) => {
+    try{const { id} = req.body;
     if (!id ) {
         return res.status(400).send({ message: "摧毁定时邮件失败,请求缺少必要参数!", status: 400 })
     }
@@ -73,6 +75,9 @@ app.post("/destroyReminders", async (req, res) => {
         return res.status(200).send({ message: "摧毁定时邮件成功", status: 200 })
     } else {
         return res.status(404).send({ message: "摧毁定时邮件失败,定时任务不存在", status: 404 })
+    }}
+    catch(err){
+        return res.status(404).send({ message: `摧毁定时邮件失败,意外错误:${err}`, status: 500 })
     }
 })
 
